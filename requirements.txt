@@ -1,0 +1,11 @@
+albumentations
+numpy
+opencv_contrib_python
+opencv_python_headless
+optuna
+Pillow
+python-decouple
+torch
+torchmetrics
+torchvision
+tqdm

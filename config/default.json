@@ -1,0 +1,72 @@
+{
+    "name": "default",
+    "model": {
+        "which_model": {
+            "name": [
+                "models.model",
+                "Model"
+            ],
+            "args": {}
+        },
+        "networks": [
+            {
+                "name": [
+                    "models.cdan",
+                    "CDAN"
+                ],
+                "args": {}
+            }
+        ]
+    },
+    "train": {
+        "device": "cuda",
+        "n_epoch": 80,
+        "lr": 1e-3,
+        "dataset": {
+            "name": [
+                "data.dataset",
+                "PairedDataset"
+            ],
+            "args": {
+                "low_light_root": "/content/drive/MyDrive/datasets/LOLdataset/train/low", 
+                "normal_light_root": "/content/drive/MyDrive/datasets/LOLdataset/train/high",
+                "image_size": [200, 200]
+            }
+        },
+        "dataloader": {
+            "args": {
+                "batch_size": 16,
+                "shuffle": "False",
+                "num_workers": 4
+            }
+        },
+        "model_path": "saved_models/",
+        "model_name": "CDAN.pt"
+    },
+    "test": {
+        "device": "cuda",
+        "dataset": {
+            "name": [
+                "data.dataset",
+                "PairedDataset"
+            ],
+            "args": {
+                "low_light_root": "/content/drive/MyDrive/datasets/LOLdataset/test/low", 
+                "normal_light_root": "/content/drive/MyDrive/datasets/LOLdataset/test/high",
+                "image_size": [200, 200]
+            },
+            "is_paired": "True"
+        },
+        "dataloader": {
+            "args": {
+                "batch_size": 16,
+                "shuffle": "False",
+                "num_workers": 4
+            }
+        },
+        "apply_post_processing": "True",
+        "model_path": "saved_models/",
+        "model_name": "CDAN.pt",
+        "output_images_path": "output_images/"
+    }
+}
