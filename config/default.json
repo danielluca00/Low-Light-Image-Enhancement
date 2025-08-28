@@ -20,7 +20,7 @@
     },
     "train": {
         "device": "cuda",
-        "n_epoch": 80,
+        "n_epoch": 10,
         "lr": 1e-3,
         "dataset": {
             "name": [
