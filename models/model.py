@@ -8,6 +8,7 @@ from torchmetrics import PeakSignalNoiseRatio
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 import torchvision.models as models
+import torchvision.transforms as transforms
 
 from tqdm import tqdm
 from PIL import Image
@@ -15,6 +16,7 @@ import numpy as np
 
 from models.base import BaseModel
 from utils.post_processing import enhance_color, enhance_contrast
+from torchvision.transforms import functional as TF
 
 
 class Model(BaseModel):
@@ -42,10 +44,12 @@ class Model(BaseModel):
             output_image = output_image.detach().cpu().permute(1, 2, 0).numpy()
             output_image = (output_image * 255).astype(np.uint8)
             output_image = Image.fromarray(output_image)
+            output_resized = TF.resize(output_image, (400, 600))
+            # output_resized = transforms.ToPILImage()(output_resized)
 
             output_path = os.path.join(save_dir, f'output_{i + 1}.png')
 
-            output_image.save(output_path)
+            output_resized.save(output_path)
         print(f'{len(outputs)} output images generated and saved to {save_dir}')
 
 
