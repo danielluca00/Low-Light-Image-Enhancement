@@ -26,17 +26,44 @@ class Model(BaseModel):
 
         self.network = network.to(self.device)
         self.optimizer = Adam(self.network.parameters(), lr=self.lr)
-        self.criterion = nn.MSELoss()
+
+        # Losses / criterions
+        self.criterion = nn.MSELoss()  # base loss
+        self.ssim_metric = StructuralSimilarityIndexMeasure().to(self.device)
+        self.lpips_metric = LearnedPerceptualImagePatchSimilarity(net_type='alex').to(self.device)
+
+        # VGG for perceptual loss
+        self.vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features[:20].to(self.device)
+        for param in self.vgg.parameters():
+            param.requires_grad = False  # no training for VGG
+
+        # Loss weights (puoi sperimentare)
+        self.lambda_mse = 1.0
+        self.lambda_vgg = 0.25
+        self.lambda_ssim = 0.5
+        self.lambda_lpips = 0.5
 
     def composite_loss(self, outputs, targets):
-        """Computes the composite loss by combining L2 loss and perceptual (VGG) loss."""
-        vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features[:20].to(self.device)
-        perceptual_loss_weight = 0.25
-        loss = self.criterion(outputs, targets)
-        perceptual_loss = perceptual_loss_weight * F.mse_loss(vgg(outputs), vgg(targets))
+        """Computes the composite loss: MSE + perceptual (VGG) + SSIM + LPIPS."""
+        mse_loss = self.criterion(outputs, targets)
+        vgg_loss = F.mse_loss(self.vgg(outputs), self.vgg(targets))
 
-        return loss + perceptual_loss
-    
+        # SSIM -> maggiore è meglio, quindi loss = 1 - ssim
+        ssim_loss = 1 - self.ssim_metric(outputs, targets)
+
+        # LPIPS -> è già una loss percettiva
+        lpips_loss = self.lpips_metric(outputs, targets)
+
+        # Weighted sum
+        total_loss = (
+            self.lambda_mse * mse_loss +
+            self.lambda_vgg * vgg_loss +
+            self.lambda_ssim * ssim_loss +
+            self.lambda_lpips * lpips_loss
+        )
+
+        return total_loss
+
     def generate_output_images(self, outputs, save_dir):
         """Generates and saves output images to the specified directory."""
         os.makedirs(save_dir, exist_ok=True)
@@ -45,13 +72,10 @@ class Model(BaseModel):
             output_image = (output_image * 255).astype(np.uint8)
             output_image = Image.fromarray(output_image)
             output_resized = TF.resize(output_image, (400, 600))
-            # output_resized = transforms.ToPILImage()(output_resized)
 
             output_path = os.path.join(save_dir, f'output_{i + 1}.png')
-
             output_resized.save(output_path)
         print(f'{len(outputs)} output images generated and saved to {save_dir}')
-
 
     def train_step(self):
         """Trains the model."""
@@ -64,8 +88,7 @@ class Model(BaseModel):
             dataloader_iter = tqdm(
                 self.dataloader, desc=f'Training... Epoch: {epoch + 1}/{self.epoch}', total=len(self.dataloader))
             for inputs, targets in dataloader_iter:
-                inputs, targets = inputs.to(
-                    self.device), targets.to(self.device)
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
                 self.optimizer.zero_grad()
 
                 outputs = self.network(inputs)
@@ -86,7 +109,6 @@ class Model(BaseModel):
             train_losses[epoch] = train_loss
 
             print(f"Epoch [{epoch + 1}/{self.epoch}] Train Loss: {train_loss:.4f}")
-
 
     def test_step(self):
         """Test the model."""
@@ -113,7 +135,8 @@ class Model(BaseModel):
                     if self.apply_post_processing:
                         outputs = enhance_contrast(outputs, contrast_factor=1.12)
                         outputs = enhance_color(outputs, saturation_factor=1.35)
-                    loss = self.criterion(outputs, targets)
+
+                    loss = self.composite_loss(outputs, targets)
                     test_loss += loss.item()
                     test_psnr += psnr(outputs, targets)
                     test_ssim += ssim(outputs, targets)
@@ -130,6 +153,6 @@ class Model(BaseModel):
 
             if self.is_dataset_paired:
                 print(
-                    f'Test Loss: {test_loss:.4f}, Test PSNR: {test_psnr:.4f}, Test SSIM: {test_ssim:.4f}, Test LIPIS: {test_lpips:.4f}')
+                    f'Test Loss: {test_loss:.4f}, Test PSNR: {test_psnr:.4f}, Test SSIM: {test_ssim:.4f}, Test LPIPS: {test_lpips:.4f}')
 
             self.generate_output_images(outputs, self.output_images_path)
