@@ -26,7 +26,10 @@ augmentation_settings = [
     A.HorizontalFlip(always_apply=True, p=1),
     A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1),
     A.GaussNoise(var_limit=(10.0,50.0), p=1),
-    A.MotionBlur(blur_limit=3, p=1)
+    A.MotionBlur(blur_limit=3, p=1),
+    A.RandomGamma(gamma_limit=(80,120), p=1),
+    A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=1),
+    A.Sharpen(alpha=(0.2,0.5), lightness=(0.5,1.0), p=1)
 ]
 
 aug_settings_names = [
@@ -34,7 +37,10 @@ aug_settings_names = [
     'horizontal_flip',
     'brightness_contrast',
     'gauss_noise',
-    'motion_blur'
+    'motion_blur',
+    'gamma',
+    'hue_saturation',
+    'sharpen'
 ]
 
 os.makedirs(augmentation_folder, exist_ok=True)
