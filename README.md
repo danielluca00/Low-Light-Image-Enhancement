@@ -1,7 +1,4 @@
 # CDAN: Convolutional Dense Attention-guided Network for Low-light Image Enhancement
-[Hossein Shakibania](https://scholar.google.com/citations?user=huveR90AAAAJ&hl=en&authuser=1)\*, [Sina Raoufi](https://scholar.google.com/citations?user=f0iw8XsAAAAJ&hl=en&authuser=1)\*, and [Hassan Khotanlou](https://scholar.google.com/citations?user=5YX31NgAAAAJ&hl=en&authuser=1)
-
-<sup>\* Equal contribution</sup>
 
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/Hossshakiba/CDAN)
 [![Huggine Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-ffc107?color=ffc107&logoColor=white)](https://huggingface.co/Hossshakiba/CDAN)
