@@ -15,7 +15,7 @@ from PIL import Image
 import numpy as np
 
 from models.base import BaseModel
-from utils.post_processing import enhance_color, enhance_contrast
+from utils.post_processing import enhance_color, enhance_contrast, sharpen, soft_denoise
 from torchvision.transforms import functional as TF
 
 
@@ -133,8 +133,10 @@ class Model(BaseModel):
 
                     outputs = self.network(inputs)
                     if self.apply_post_processing:
-                        outputs = enhance_contrast(outputs, contrast_factor=1.12)
-                        outputs = enhance_color(outputs, saturation_factor=1.35)
+                        # outputs = soft_denoise(outputs, sigma=0.02)
+                        outputs = enhance_contrast(outputs, contrast_factor=1.03)
+                        outputs = enhance_color(outputs, saturation_factor=1.55)
+                        # outputs = sharpen(outputs, strength=1.5) # può introdurre artefatti
 
                     loss = self.composite_loss(outputs, targets)
                     test_loss += loss.item()
