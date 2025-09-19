@@ -30,7 +30,7 @@
             "args": {
                 "low_light_root": "../LOLdataset/train/low", 
                 "normal_light_root": "../LOLdataset/train/high",
-                "image_size": [200, 200]
+                "image_size": [600, 400]
             }
         },
         "dataloader": {
@@ -53,7 +53,7 @@
             "args": {
                 "low_light_root": "../LOLdataset/test/low", 
                 "normal_light_root": "../LOLdataset/test/high",
-                "image_size": [200, 200]
+                "image_size": [600, 400]
             },
             "is_paired": "True"
         },

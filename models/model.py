@@ -18,6 +18,9 @@ from models.base import BaseModel
 from utils.post_processing import enhance_color, enhance_contrast, sharpen, soft_denoise
 from torchvision.transforms import functional as TF
 
+# 🔹 AMP import
+from torch.cuda.amp import autocast, GradScaler
+
 
 class Model(BaseModel):
     def __init__(self, network, **kwargs):
@@ -26,6 +29,9 @@ class Model(BaseModel):
 
         self.network = network.to(self.device)
         self.optimizer = Adam(self.network.parameters(), lr=self.lr)
+
+        # 🔹 Init GradScaler for AMP
+        self.scaler = GradScaler()
 
         # Losses / criterions
         self.criterion = nn.MSELoss()  # base loss
@@ -48,10 +54,8 @@ class Model(BaseModel):
         mse_loss = self.criterion(outputs, targets)
         vgg_loss = F.mse_loss(self.vgg(outputs), self.vgg(targets))
 
-        # SSIM -> maggiore è meglio, quindi loss = 1 - ssim
         ssim_loss = 1 - self.ssim_metric(outputs, targets)
 
-        # LPIPS -> è già una loss percettiva
         lpips_loss = self.lpips_metric(outputs, targets)
 
         # Weighted sum
@@ -78,7 +82,7 @@ class Model(BaseModel):
         print(f'{len(outputs)} output images generated and saved to {save_dir}')
 
     def train_step(self):
-        """Trains the model."""
+        """Trains the model with AMP."""
         train_losses = np.zeros(self.epoch)
         best_loss = float('inf')
         self.network.to(self.device)
@@ -91,13 +95,17 @@ class Model(BaseModel):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 self.optimizer.zero_grad()
 
-                outputs = self.network(inputs)
-                loss = self.composite_loss(outputs, targets)
+                # 🔹 Forward pass with autocast
+                with autocast():
+                    outputs = self.network(inputs)
+                    loss = self.composite_loss(outputs, targets)
+
+                # 🔹 Backward pass with scaler
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+
                 train_loss += loss.item()
-
-                loss.backward()
-                self.optimizer.step()
-
                 dataloader_iter.set_postfix({'loss': loss.item()})
 
             train_loss = train_loss / len(self.dataloader)
@@ -111,7 +119,7 @@ class Model(BaseModel):
             print(f"Epoch [{epoch + 1}/{self.epoch}] Train Loss: {train_loss:.4f}")
 
     def test_step(self):
-        """Test the model."""
+        """Test the model (no AMP, FP32)."""
         path = os.path.join(self.model_path, self.model_name)
         self.network.load_state_dict(torch.load(path))
         self.network.eval()
