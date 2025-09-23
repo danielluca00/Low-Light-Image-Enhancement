@@ -30,7 +30,7 @@ In this section, I present the experimental results obtained by training the CDA
 ### Quantitative Evaluation
 | PSNR ↑ | SSIM ↑ | LPIPS ↓ |
 |-------------|-------------|--------------|
-| 17.959      | 0.713       | 0.360        |
+| 29.472 dB     | 0.868       | 0.070        |
 
 
 ### Qualitative Evaluation
